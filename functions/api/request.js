@@ -15,7 +15,7 @@ export async function onRequestPost(context) {
 async function fetchResponse(context) {
     const {request, env} = context;
     const db = context.env.DB;
-    const openai = new OpenAI({apiKey: env.API_KEY});
+    const openai = new OpenAI({apiKey: env.API_KEY, baseURL: env.BASE_URL});
     const requestBody = await request.json();
     const chatId = requestBody.chatId;
     const inputPrompt = requestBody.prompt;
