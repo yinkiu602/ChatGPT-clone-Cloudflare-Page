@@ -150,7 +150,24 @@ const FormatResponse = ({ input_text }) => {
   return formattedElements;
 }
 
-const MenuItem = ({setMessage, title, id}) => {
+const MenuItem = ({setMessage, title, id, setReloadHistory}) => {
+  function delete_click(e) {
+    e.preventDefault();
+    e.stopPropagation();
+    let new_conversation_id = e.target.getAttribute("data-value");
+    if (new_conversation_id === conversation_id) { 
+      setMessage([]);
+      conversation_id = "";
+    }
+    fetch(("/conversation/" + new_conversation_id), {
+      method: "DELETE",
+      mode: "cors",
+      credentials: "include",
+    }).then(()=>{ setReloadHistory(true); }).catch(err => {
+      console.log("Failed to delete conversation");
+      console.error(err);
+    });
+  }
   function click(e) {
     e.preventDefault();
     let new_conversation_id = e.target.getAttribute("data-value");
@@ -163,17 +180,19 @@ const MenuItem = ({setMessage, title, id}) => {
       console.log("Failed to retrieve conversation");
       console.error(err);
     });
-
   }
 
   return (
     <div className="menu_item" onClick={click} data-value={id}>
       <span data-value={id}>{title}</span>
+      <div className="menu_delete_button" onClick={delete_click} data-value={id}>
+        <img className="hundred" src="recycle.svg" alt="recycle_button" title="Delete conversation" data-value={id}/>
+      </div>
     </div>
   )
 }
 
-const LeftBar = ({setMessage, loginState, setLoginState}) => {
+const LeftBar = ({setMessage, loginState, setLoginState, reloadHistory, setReloadHistory}) => {
   const [username, setUsername] = useState("");
   const [history, setHistory] = useState([]);
 
@@ -192,7 +211,8 @@ const LeftBar = ({setMessage, loginState, setLoginState}) => {
   }, []);
 
   useEffect(()=>{
-    if (!loginState) { return; }
+    if ( !loginState ) { return; }
+    if ( history.length > 0 && !reloadHistory ) { return; }
     fetch("/history", fetch_get).then(res => {
       res.json().then(data => {
         setHistory(data);
@@ -201,7 +221,8 @@ const LeftBar = ({setMessage, loginState, setLoginState}) => {
       console.log("Failed to retrieve history");
       console.error(err);
     });
-  }, [loginState]);
+    if (reloadHistory) { setReloadHistory(false); }
+  }, [loginState, reloadHistory]);
 
   const handleLogin = () => {
     window.location.href = "/oauth2/login";
@@ -226,7 +247,7 @@ const LeftBar = ({setMessage, loginState, setLoginState}) => {
       <div className="hundred full_width content_menu">
         {history.map((item, index) => {
           return (
-            <MenuItem key={index} setMessage={setMessage} title={item.title} id={item.id}/>
+            <MenuItem key={index} setMessage={setMessage} title={item.title} id={item.id} setReloadHistory={setReloadHistory}/>
           )
         })}
       </div>
@@ -248,11 +269,16 @@ const BottomBarImage = ({image, index, attachment, setAttachment}) => {
   }
   
   return (
-    <img src={image} data-index={index} className="msg_image" alt="attachment" onClick={imageClick}/>
+    <div className="msg_image_div">
+      <img src={image} data-index={index} className="msg_image" alt="attachment"/>
+      <div className="img_del_div">
+        <img src="cross.svg" className="img_del" data-index={index} alt="close_button" title="Delete image" onClick={imageClick}/>
+      </div>
+    </div>
   )
 }
 
-const BottomBar = ({message, setMessage}) => {
+const BottomBar = ({message, setMessage, setThinking, setReloadHistory}) => {
   const [question, setQuestion] = useState("");
   const [attachment, setAttachment] = useState([]);
   const [uploading, setUploading] = useState(false);
@@ -325,6 +351,7 @@ const BottomBar = ({message, setMessage}) => {
     e.preventDefault();
     if (question === "") { return; }
     let res_text = "";
+    let old_id = conversation_id;
     let user_question = question;
     let old_message;
     let attachment_content= [];
@@ -358,12 +385,15 @@ const BottomBar = ({message, setMessage}) => {
       console.log("Failed to send message");
       console.error(err);
     })
+    setThinking(true);
     for await (const chunk of res.body) {
       let partial = await new Response(chunk).text();
       res_text += partial;
       const new_message = old_message.concat([{role: "assistant", content: res_text}]);
       setMessage(new_message);
     }
+    setThinking(false);
+    if (old_id === "") { setReloadHistory(true); }
   }
 
   async function paste(e) {
@@ -382,7 +412,7 @@ const BottomBar = ({message, setMessage}) => {
 
   return (
     <div className="flex flex_col submit_form_div">
-      <div className="msg_image_div">
+      <div className="msg_image_left">
         {attachment.map((item, index) => {return (
               <BottomBarImage key={index} image={item} index={index} attachment={attachment} setAttachment={setAttachment}/>
             )
@@ -396,8 +426,9 @@ const BottomBar = ({message, setMessage}) => {
   );
 }
 
-const MainContent = ({message, setMessage}) => {
+const MainContent = ({message, setMessage, setReloadHistory}) => {
   //const [message, setMessage] = useState([]);
+  const [thinking, setThinking] = useState(false);
 
   useEffect(() => {
     let chatbox = document.getElementById("main_content");
@@ -416,14 +447,15 @@ const MainContent = ({message, setMessage}) => {
               <>
                 {item.role === "user" ? <div className="username">You</div> : <div className="bot">ChatGPT</div>}              
                 <div key={index} className={"flex flex_col chat_content fit_content" + (item.role === "user" ? " user_chat": "") }>
-                  {FormatResponse({input_text: item.content})}                
+                  {FormatResponse({input_text: item.content})}
+                  {thinking ? <span className="blinking">•</span>: ""}
                 </div>
               </>
             )
           })}
         </div>
       </div>
-      <BottomBar message={message} setMessage={setMessage}/>
+      <BottomBar message={message} setMessage={setMessage} setThinking={setThinking} setReloadHistory={setReloadHistory}/>
     </div>
   )
 }
@@ -431,6 +463,7 @@ const MainContent = ({message, setMessage}) => {
 function App() {
   const [message, setMessage] = useState([]);
   const [loginState, setLoginState] = useState(false);
+  const [reloadHistory, setReloadHistory] = useState(false);
   const mathJaxConfig = {
     options:{
       enableMenu: false,
@@ -440,8 +473,8 @@ function App() {
   return (
     <MathJaxContext config={mathJaxConfig}>
       <div className="App full_height" style={{display:"flex"}}>
-        <LeftBar setMessage={setMessage} loginState={loginState} setLoginState={setLoginState}/>
-        <MainContent message={message} setMessage={setMessage}/>
+        <LeftBar setMessage={setMessage} loginState={loginState} setLoginState={setLoginState} reloadHistory={reloadHistory} setReloadHistory={setReloadHistory}/>
+        <MainContent message={message} setMessage={setMessage} setReloadHistory={setReloadHistory}/>
       </div>
     </MathJaxContext>
   );
