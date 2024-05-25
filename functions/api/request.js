@@ -19,12 +19,13 @@ async function fetchResponse(context) {
     const requestBody = await request.json();
     const chatId = requestBody.chatId;
     let inputPrompt = requestBody.prompt;
-    let tokenizer_prompt = JSON.parse(JSON.stringify(requestBody));
+    let backupPrompt = JSON.parse(JSON.stringify(inputPrompt));
     let res_msg = "";
     let { readable, writable } = new TransformStream();
     let writer = writable.getWriter();
     const textEncoder = new TextEncoder();
     if (env.TOKENIZER_URL && env.PROMPT_MAX_TOKEN) {
+        let tokenizer_prompt = JSON.parse(JSON.stringify(requestBody));
         tokenizer_prompt["max"] = env.PROMPT_MAX_TOKEN;
         const res = await fetch(env.TOKENIZER_URL, {
             method: "POST",
@@ -51,7 +52,7 @@ async function fetchResponse(context) {
         }
         writer.close();
         if (chatId) {
-            const outputPrompt = tokenizer_prompt.concat([{ role: "assistant", content: res_msg }]);
+            const outputPrompt = backupPrompt.concat([{ role: "assistant", content: res_msg }]);
             await db.prepare(`INSERT OR REPLACE INTO chat_history (_id, userId, title, messages, modified) VALUES ('${chatId}', '${context.data.user}', '${outputPrompt[0].content[0].text}', '${JSON.stringify(outputPrompt)}', ${Date.now()});`).run();
         }
     })());
