@@ -18,18 +18,31 @@ async function fetchResponse(context) {
     const openai = new OpenAI({apiKey: env.API_KEY, baseURL: env.BASE_URL});
     const requestBody = await request.json();
     const chatId = requestBody.chatId;
-    const inputPrompt = requestBody.prompt;
+    let inputPrompt = requestBody.prompt;
     let res_msg = "";
     let { readable, writable } = new TransformStream();
     let writer = writable.getWriter();
     const textEncoder = new TextEncoder();
+    if (env.TOKENIZER_URL && env.PROMPT_MAX_TOKEN) {
+        let tokenizer_prompt = JSON.parse(JSON.stringify(requestBody));
+        tokenizer_prompt["max"] = env.PROMPT_MAX_TOKEN;
+        const res = await fetch(env.TOKENIZER_URL, {
+            method: "POST",
+            headers: {"Content-Type": "application/json",},
+            body: JSON.stringify(tokenizer_prompt),
+        })
+        if (res.ok) {
+            const data = await res.json();
+            inputPrompt = data;
+        }
+    }
 
     context.waitUntil((async () => {
         const stream = await openai.chat.completions.create({
           model: 'gpt-4o',
           messages: inputPrompt,
           stream: true,
-          max_tokens: parseInt(env.PROMPT_MAX_TOKEN),
+          max_tokens: parseInt(env.REQUEST_MAX_TOKEN),
         });
         for await (const part of stream) {
             let temp = part.choices[0]?.delta?.content || '';
