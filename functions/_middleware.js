@@ -10,10 +10,10 @@ export async function onRequest(context) {
         }
         const session_id = session_str.split(";")[0];
         if (session_id) {
-            const user_id = await env.session.get(session_id);
+            const user_id = await env.session.get(session_id, { cacheTtl: 86400 });
             let username;
             if (user_id) {
-                username = await env.session.get(user_id);
+                username = await env.session.get(user_id, { cacheTtl: 86400 });
                 context.data.user = user_id;
                 context.data.username = username;
             }

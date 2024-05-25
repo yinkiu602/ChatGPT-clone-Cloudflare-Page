@@ -29,6 +29,7 @@ async function fetchResponse(context) {
           model: 'gpt-4o',
           messages: inputPrompt,
           stream: true,
+          max_tokens: parseInt(env.PROMPT_MAX_TOKEN),
         });
         for await (const part of stream) {
             let temp = part.choices[0]?.delta?.content || '';
