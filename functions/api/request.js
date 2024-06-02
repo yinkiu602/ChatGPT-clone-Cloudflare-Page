@@ -50,7 +50,6 @@ async function fetchResponse(context) {
             res_msg += temp;
             writer.write(textEncoder.encode(temp));
         }
-        writer.close();
         if (chatId) {
             let user_prompt = (backupPrompt[backupPrompt.length - 1].content[0].text).replace(/\'/g, "\'\'");
             res_msg = res_msg.replace(/\'/g, "\'\'");
@@ -58,15 +57,15 @@ async function fetchResponse(context) {
             const outputPrompt = backupPrompt.concat([{ role: "assistant", content: res_msg }]);
             const lastMessage = [backupPrompt[backupPrompt.length - 1]].concat([{ role: "assistant", content: res_msg }]);
             const result = await db.prepare(`SELECT EXISTS(SELECT _id FROM chat_history WHERE _id='${chatId}' AND userId='${context.data.user}') AS result;`).first("result");
-            console.log(`Type of result: ${typeof result} and value: ${result}`);
-            if (result == 0) {
+            if (result === 0) {
                 await db.prepare(`INSERT OR IGNORE INTO chat_history (_id, userId, title, messages, modified) VALUES ('${chatId}', '${context.data.user}', '${outputPrompt[0].content[0].text}', '${JSON.stringify(outputPrompt)}', ${Date.now()});`).run();
             }
             else {
-                await db.prepare(`UPDATE chat_history SET messages=SUBSTR(messages, 1, LENGTH(messages)-1) || '${"," + (JSON.stringify(lastMessage)).substring(1)}', modified=${Date.now()} WHERE _id='${chatId}' AND userId='${context.data.user}';`).run();
+                db.prepare(`UPDATE chat_history SET messages=SUBSTR(messages, 1, LENGTH(messages)-1) || '${"," + (JSON.stringify(lastMessage)).substring(1)}', modified=${Date.now()} WHERE _id='${chatId}' AND userId='${context.data.user}';`).run();
             }
             //await db.prepare(`INSERT OR REPLACE INTO chat_history (_id, userId, title, messages, modified) VALUES ('${chatId}', '${context.data.user}', '${outputPrompt[0].content[0].text}', '${JSON.stringify(outputPrompt)}', ${Date.now()});`).run();
         }
+        writer.close();
     })());
 
     return new Response(readable);
