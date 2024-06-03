@@ -461,7 +461,7 @@ const MainContent = ({message, setMessage, setReloadHistory}) => {
               <>
                 {item.role === "user" ? <div className="username">You</div> : <div className="bot">ChatGPT</div>}              
                 <div key={index} className={"flex flex_col chat_content fit_content" + (item.role === "user" ? " user_chat": "") }>
-                  {FormatResponse({input_text: item.content})}
+                  {FormatResponse({input_text: item.content, role: item.role})}
                   {(thinking && item.role === "assistant" && index === (message.length - 1)) ? <span className="blinking">•</span>: ""}
                 </div>
               </>
