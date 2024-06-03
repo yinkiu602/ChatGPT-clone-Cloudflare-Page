@@ -16,7 +16,7 @@ const fetch_get = {
 
 let conversation_id = "";
 
-const FormatResponse = ({ input_text }) => {
+const FormatResponse = ({ input_text, role }) => {
   if (!input_text) return null;
   
   let lines;
@@ -36,12 +36,25 @@ const FormatResponse = ({ input_text }) => {
   const codeBlockPattern = /^\s*```(.*)$/;
   const unorderListPattern = /^[\-*]\s+(.*)$/;
   const orderListPattern = /^\d\.\s+(.*)$/;
+  const boldPatten  = /\*\*(.*?)\*\*/;
   const base64Pattern = /^data:image\/[a-zA-Z]*;base64,/;
   let formattedElements = [];
   let listItems = [];
   let nomralItems = [];
   let codeLines = [];
   let lastMatched = [];
+    
+  const boldHighLighting = (text) => {
+    if (boldPatten.test(text) && role !== "user") {
+      return text.split(boldPatten).map((item, index) => {
+        if (index % 2) {
+          return <b key={index}>{item}</b>;
+        }
+        return item;
+      });
+    }
+    return text;
+  }
   
   const flushNormalItems = () => {
     if (nomralItems.length) {
@@ -50,7 +63,7 @@ const FormatResponse = ({ input_text }) => {
       nomralItems[0] = nomralItems[0].trimStart();
       formattedElements.push(
         <MathJax key={formattedElements.length} dynamic>
-          {nomralItems.join("\n")}
+          {boldHighLighting(nomralItems.join("\n"))}
         </MathJax>
       );
       nomralItems = [];
@@ -85,7 +98,7 @@ const FormatResponse = ({ input_text }) => {
         formattedElements.push(
           <ul key={formattedElements.length}>
             {listItems.map((item, index) => (
-              <li key={index}>{item}</li>
+              <li key={index}>{boldHighLighting(item)}</li>
             ))}
           </ul>
         );
@@ -94,7 +107,7 @@ const FormatResponse = ({ input_text }) => {
         formattedElements.push(
           <ol key={formattedElements.length}>
             {listItems.map((item, index) => (
-              <li key={index}>{item}</li>
+              <li key={index}>{boldHighLighting(item)}</li>
             ))}
           </ol>
         );
