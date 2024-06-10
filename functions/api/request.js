@@ -1,4 +1,6 @@
 import OpenAI from "openai";
+import { Ratelimit } from "@upstash/ratelimit";
+import { Redis } from "@upstash/redis/cloudflare";
 
 export async function onRequestPost(context) {
     const { env, request } = context;
@@ -18,6 +20,17 @@ async function fetchResponse(context) {
     const openai = new OpenAI({apiKey: env.API_KEY, baseURL: env.BASE_URL});
     const requestBody = await request.json();
     const chatId = requestBody.chatId;
+    const loggedin_ratelimit = new Ratelimit({
+        redis: Redis.fromEnv(env),
+        limiter: Ratelimit.slidingWindow(40, "3 h"),
+        analytics: true,
+    });
+    const unlogged_ratelimit = new Ratelimit({
+        redis: Redis.fromEnv(env),
+        limiter: Ratelimit.slidingWindow(10, "3 h"),
+        analytics: true,
+    });
+    const ip = request.headers.get("CF-Connecting-IP")
     let inputPrompt = requestBody.prompt;
     let backupPrompt = JSON.parse(JSON.stringify(inputPrompt));
     let res_msg = "";
@@ -39,6 +52,19 @@ async function fetchResponse(context) {
     }
 
     context.waitUntil((async () => {
+        let rate_limit_result = "";
+        if (context.data.user) {
+            rate_limit_result = (await loggedin_ratelimit.limit(context.data.user)).success;
+        }
+        else {
+            rate_limit_result = (await unlogged_ratelimit.limit(ip)).success;
+        }
+        if (!rate_limit_result) {
+            writer.write(textEncoder.encode("Rate Limit Exceeded"));
+            writer.close();
+            return;
+        }
+
         const stream = await openai.chat.completions.create({
           model: 'gpt-4o',
           messages: inputPrompt,
