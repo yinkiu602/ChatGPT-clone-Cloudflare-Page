@@ -1,70 +1,76 @@
-# Getting Started with Create React App
+# ChatGPT clone using React (Frontend), deployed on Cloudflare Pages.
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+A cloned version of ChatGPT website written in JavaScript. Using OpenAI API to interact with OpenAI model.
 
-## Available Scripts
+## Screenshots
+![alt text](image.png)
 
-In the project directory, you can run:
+## Requirements
+- [Cloudflare account](https://dash.cloudflare.com/sign-up)
+- [Discord application with OAuth2](https://discord.com/developers/docs/topics/oauth2)
+- [Node.js + npm](https://nodejs.org/en/download/prebuilt-installer/current)
+- [OpenAI API keys](https://platform.openai.com/api-keys)
+- [Upstash Redis](https://console.upstash.com/redis)
 
-### `npm start`
+## Features
+- [X]  Authentication via Discord OAuth2
+- [X]  Display mathematical notation from GPT response with LaTeX markup
+- [X]  Highlight code segment from GPT response and enclose in code block
+- [X]  Interact with OpenAI GPT model using API
+- [X]  Remember login by session cookies using KV
+- [X]  Remove image in prompt by clicking on corresponding image
+- [X]  Save & Load chat history using D1 database
+- [X]  Upload image in prompt by Ctrl+V to utilize GPT-4 vision capabilities
 
-Runs the app in the development mode.\
-Open [http://localhost:3000](http://localhost:3000) to view it in your browser.
+## TODOs
+- [X]  Button for deleting chat history
+- [X]  Button for removing uploaded image in prompt
+- [ ]  Button for uploading image instead of Ctrl+V only
+- [ ]  Better UI design
+- [ ]  Logout button
+- [ ]  Responsive Web Design (Especially for mobile users)
 
-The page will reload when you make changes.\
-You may also see any lint errors in the console.
+## General installation
+```
+git clone https://github.com/yinkiu602/ChatGPT-clone-Cloudflare-Page.git
+```
 
-### `npm test`
+## Installation (Frontend)
+```
+Clone thie repository and create a page application on Cloudflare website by importing the cloned repo.
+Create the required KV namespace and D1 table on Cloudflare.
+```
 
-Launches the test runner in the interactive watch mode.\
-See the section about [running tests](https://facebook.github.io/create-react-app/docs/running-tests) for more information.
+## Chat saving
+- All chat history will be automatically saved to database if the user is logged in.
 
-### `npm run build`
+## Datbase entry format
+```
+{
+    "_id": "${random_chat_id_here}",
+    "userId": "${user_id}",
+    "title": "${title of the conversation}",
+    "messages": [
+        {
+            "role": "user",
+            "content": [
+                {
+                    "type": "text",
+                    "text": "${user prompt}"
+                }
+            ]
+        },
+        {
+            "role": "assistant",
+            "content": "${response from GPT}"
+        }
+    ],
+    "modified": ${Unix timestamp of last modification}
+}
+```
 
-Builds the app for production to the `build` folder.\
-It correctly bundles React in production mode and optimizes the build for the best performance.
+## Authors
+- [@Josh Wong](https://github.com/yinkiu602)
 
-The build is minified and the filenames include the hashes.\
-Your app is ready to be deployed!
-
-See the section about [deployment](https://facebook.github.io/create-react-app/docs/deployment) for more information.
-
-### `npm run eject`
-
-**Note: this is a one-way operation. Once you `eject`, you can't go back!**
-
-If you aren't satisfied with the build tool and configuration choices, you can `eject` at any time. This command will remove the single build dependency from your project.
-
-Instead, it will copy all the configuration files and the transitive dependencies (webpack, Babel, ESLint, etc) right into your project so you have full control over them. All of the commands except `eject` will still work, but they will point to the copied scripts so you can tweak them. At this point you're on your own.
-
-You don't have to ever use `eject`. The curated feature set is suitable for small and middle deployments, and you shouldn't feel obligated to use this feature. However we understand that this tool wouldn't be useful if you couldn't customize it when you are ready for it.
-
-## Learn More
-
-You can learn more in the [Create React App documentation](https://facebook.github.io/create-react-app/docs/getting-started).
-
-To learn React, check out the [React documentation](https://reactjs.org/).
-
-### Code Splitting
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/code-splitting](https://facebook.github.io/create-react-app/docs/code-splitting)
-
-### Analyzing the Bundle Size
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size](https://facebook.github.io/create-react-app/docs/analyzing-the-bundle-size)
-
-### Making a Progressive Web App
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app](https://facebook.github.io/create-react-app/docs/making-a-progressive-web-app)
-
-### Advanced Configuration
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/advanced-configuration](https://facebook.github.io/create-react-app/docs/advanced-configuration)
-
-### Deployment
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/deployment](https://facebook.github.io/create-react-app/docs/deployment)
-
-### `npm run build` fails to minify
-
-This section has moved here: [https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify](https://facebook.github.io/create-react-app/docs/troubleshooting#npm-run-build-fails-to-minify)
+## License
+- [GNU v3.0 License](LICENSE)
