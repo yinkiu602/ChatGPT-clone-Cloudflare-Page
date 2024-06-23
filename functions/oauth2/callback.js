@@ -16,7 +16,7 @@ export async function onRequestGet(context) {
                 client_secret: env.CLIENT_SECRET,
                 code: code,
                 grant_type: "authorization_code",
-                redirect_uri: env.REDIRECT_URI,
+                redirect_uri: ("https://" + request.headers.get("host") + "/" + env.REDIRECT_URI),
                 scope: "identify",
             }),
         })
