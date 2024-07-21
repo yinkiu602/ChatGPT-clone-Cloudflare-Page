@@ -73,7 +73,7 @@ async function fetchResponse(context) {
         }
 
         const stream = await openai.chat.completions.create({
-          model: 'gpt-4o',
+          model: (context.data.user? 'gpt-4o': 'gpt-4o-mini') ,
           messages: inputPrompt,
           stream: true,
           max_tokens: parseInt(env.REQUEST_MAX_TOKEN),
