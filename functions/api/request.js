@@ -77,6 +77,7 @@ async function fetchResponse(context) {
           messages: inputPrompt,
           stream: true,
           max_tokens: parseInt(env.REQUEST_MAX_TOKEN),
+          user: (context.data.user || ip ),
         });
         for await (const part of stream) {
             let temp = part.choices[0]?.delta?.content || '';
