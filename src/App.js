@@ -1,6 +1,6 @@
 import {ReactComponent as Arrow} from './arrow.svg';
 import './App.css';
-import React, {useState, useEffect} from "react";
+import React, {useState, useEffect, useRef} from "react";
 import { MathJax, MathJaxContext } from "better-react-mathjax";
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { a11yDark } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -296,6 +296,38 @@ const BottomBar = ({message, setMessage, setThinking, setReloadHistory}) => {
   const [question, setQuestion] = useState("");
   const [attachment, setAttachment] = useState([]);
   const [uploading, setUploading] = useState(false);
+  const turnstile_token = useRef("");
+  const turnstile_widget = useRef("");
+
+  useEffect(() => {
+    if (window.location.hostname !== "chatgpt-clone-cloudflare-page.pages.dev") { return; }
+
+    let widget_id = "";
+    const script = document.createElement("script");
+    script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit&onload=onloadTurnstileCallback&retry=never";
+    script.async = true;
+    document.body.appendChild(script);
+
+    window.onloadTurnstileCallback = function () {
+      widget_id = window.turnstile.render('.cf-turnstile', {
+          sitekey: '0x4AAAAAAAf448q1ewe2JJ_m',
+          callback: function(token) {
+            turnstile_token.current = token;
+          },
+      });
+      turnstile_widget.current = widget_id;
+    };
+
+  return () => {
+    if (widget_id !== "") {
+      window.turnstile.remove(widget_id);
+      widget_id = "";
+    }
+    document.body.removeChild(script);
+    turnstile_token.current = "";
+    turnstile_widget.current = "";
+  }
+  },[])
 
   useEffect(() => {
     let chatbox = document.getElementById("chatbox");
@@ -394,6 +426,7 @@ const BottomBar = ({message, setMessage, setThinking, setReloadHistory}) => {
       body: JSON.stringify({
         prompt: old_message,
         chatId: conversation_id,
+        token: turnstile_token.current,
       })
     }).catch(err => {
       console.log("Failed to send message");
@@ -408,6 +441,9 @@ const BottomBar = ({message, setMessage, setThinking, setReloadHistory}) => {
     }
     setThinking(false);
     if (old_id === "") { setReloadHistory(true); }
+    if (turnstile_widget.current !== "") {
+      window.turnstile.reset(turnstile_widget.current);
+    }
   }
 
   async function paste(e) {
@@ -433,6 +469,7 @@ const BottomBar = ({message, setMessage, setThinking, setReloadHistory}) => {
           })}
       </div>
       <form onSubmit={submit} className="submit_form flex">
+        <div className="cf-turnstile" data-sitekey="0x4AAAAAAAf448q1ewe2JJ_m"></div>
         <textarea className="full_width chatbox" id="chatbox" name="chatbox" placeholder="Message ChatGPT" rows={1} onKeyDown={submit} onChange={(event => setQuestion(event.target.value))} onPaste={paste} value={question}/>
         <button type="submit" id="submit_but"><Arrow/></button>
       </form>

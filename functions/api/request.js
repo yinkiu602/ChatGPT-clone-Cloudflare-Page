@@ -18,7 +18,12 @@ async function fetchResponse(context) {
     const {request, env} = context;
     const db = context.env.DB;
     const country = request.cf.country;
+    const ip = request.headers.get("CF-Connecting-IP")
+    const host = request.headers.get("host");
+    let { readable, writable } = new TransformStream();
+    let writer = writable.getWriter();
     let openai;
+
     if (country === "HK" || country === "CN") {
         openai = new OpenAI({apiKey: env.API_KEY, baseURL: env.BASE_URL});
     }
@@ -37,19 +42,41 @@ async function fetchResponse(context) {
         limiter: Ratelimit.slidingWindow(10, "3 h"),
         analytics: true,
     });
-    const ip = request.headers.get("CF-Connecting-IP")
     let inputPrompt = requestBody.prompt;
     let backupPrompt = JSON.parse(JSON.stringify(inputPrompt));
     let res_msg = "";
-    let { readable, writable } = new TransformStream();
-    let writer = writable.getWriter();
     const textEncoder = new TextEncoder();
+
+    // Verify if needed turnstile token & token provided
+    if (host === "chatgpt-clone-cloudflare-page.pages.dev") {
+        const result = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+            body: JSON.stringify({
+                secret: env.TURNSTILE_KEY,
+                response: requestBody.token,
+                remoteip: ip
+            }),
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        const result_json = await result.json()
+        if (!result_json.success) {
+            writer.write(textEncoder.encode("Please wait for a while before sending request. Recaptcha verification failed."));
+            writer.close();
+            return;
+        }
+    }
+
     if (env.TOKENIZER_URL && env.PROMPT_MAX_TOKEN) {
         let tokenizer_prompt = JSON.parse(JSON.stringify(requestBody));
         tokenizer_prompt["max"] = env.PROMPT_MAX_TOKEN;
         const res = await fetch(env.TOKENIZER_URL, {
             method: "POST",
-            headers: {"Content-Type": "application/json",},
+            headers: {
+                "Content-Type": "application/json",
+                "X-forwarded-for": ip,
+            },
             body: JSON.stringify(tokenizer_prompt),
         })
         if (res.ok) {
