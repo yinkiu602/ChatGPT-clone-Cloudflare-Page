@@ -47,27 +47,6 @@ async function fetchResponse(context) {
     let res_msg = "";
     const textEncoder = new TextEncoder();
 
-    // Verify if needed turnstile token & token provided
-    if (host === "chatgpt-clone-cloudflare-page.pages.dev") {
-        const result = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
-            body: JSON.stringify({
-                secret: env.TURNSTILE_KEY,
-                response: requestBody.token,
-                remoteip: ip
-            }),
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-        const result_json = await result.json()
-        if (!result_json.success) {
-            writer.write(textEncoder.encode("Please wait for a while before sending request. Recaptcha verification failed."));
-            writer.close();
-            return;
-        }
-    }
-
     if (env.TOKENIZER_URL && env.PROMPT_MAX_TOKEN) {
         let tokenizer_prompt = JSON.parse(JSON.stringify(requestBody));
         tokenizer_prompt["max"] = env.PROMPT_MAX_TOKEN;
@@ -86,6 +65,27 @@ async function fetchResponse(context) {
     }
 
     context.waitUntil((async () => {
+        // Verify if needed turnstile token & token provided
+        if (host === "chatgpt-clone-cloudflare-page.pages.dev") {
+            const result = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+                body: JSON.stringify({
+                    secret: env.TURNSTILE_KEY,
+                    response: requestBody.token,
+                    remoteip: ip
+                }),
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                }
+            })
+            const result_json = await result.json()
+            if (!result_json.success) {
+                writer.write(textEncoder.encode("Please wait for a while before sending request. Recaptcha verification failed."));
+                writer.close();
+                return;
+            }
+        }
+        
         let rate_limit_result = "";
         if (context.data.user) {
             rate_limit_result = (await loggedin_ratelimit.limit(context.data.user)).success;
