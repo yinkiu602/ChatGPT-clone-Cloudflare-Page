@@ -211,7 +211,7 @@ const LeftBar = ({setMessage, loginState, setLoginState, reloadHistory, setReloa
   const [history, setHistory] = useState([]);
 
   useEffect(() => {
-    fetch("/username", fetch_get).then(res => {
+    fetch("/api/username", fetch_get).then(res => {
       res.text().then(data => {
         if (data !== "") {
           setUsername(data);
@@ -227,7 +227,7 @@ const LeftBar = ({setMessage, loginState, setLoginState, reloadHistory, setReloa
   useEffect(()=>{
     if ( !loginState ) { return; }
     if ( history.length > 0 && !reloadHistory ) { return; }
-    fetch("/history", fetch_get).then(res => {
+    fetch("/api/history", fetch_get).then(res => {
       res.json().then(data => {
         setHistory(data);
       });
@@ -349,7 +349,7 @@ const BottomBar = ({message, setMessage, setThinking, setReloadHistory}) => {
   }, [question]);
 
   async function getConversationId() {
-    let res = await fetch("/new_chat", fetch_get).catch(err => {console.log("Failed to create new chat"); console.error(err);})
+    let res = await fetch("/api/new_chat", fetch_get).catch(err => {console.log("Failed to create new chat"); console.error(err);})
     let data = await res.json();
     conversation_id = data.id;
   }
