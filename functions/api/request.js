@@ -122,7 +122,8 @@ async function fetchResponse(context) {
             const lastMessage = [backupPrompt[backupPrompt.length - 1]].concat([{ role: "assistant", content: res_msg }]);
             const result = await db.prepare(`SELECT EXISTS(SELECT _id FROM chat_history WHERE _id='${chatId}' AND userId='${context.data.user}') AS result;`).first("result");
             if (result === 0) {
-                await db.prepare(`INSERT OR IGNORE INTO chat_history (_id, userId, title, messages, modified) VALUES ('${chatId}', '${context.data.user}', '${outputPrompt[0].content[0].text}', '${JSON.stringify(outputPrompt)}', ${Date.now()});`).run();
+                const title = outputPrompt[0].content[0].substring(0, 50);
+                await db.prepare(`INSERT OR IGNORE INTO chat_history (_id, userId, title, messages, modified) VALUES ('${chatId}', '${context.data.user}', '${title}', '${JSON.stringify(outputPrompt)}', ${Date.now()});`).run();
             }
             else {
                 db.prepare(`UPDATE chat_history SET messages=SUBSTR(messages, 1, LENGTH(messages)-1) || '${"," + (JSON.stringify(lastMessage)).substring(1)}', modified=${Date.now()} WHERE _id='${chatId}' AND userId='${context.data.user}';`).run();

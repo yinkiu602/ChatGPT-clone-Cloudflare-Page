@@ -1,4 +1,4 @@
-const COOKIE_TTL = 60 * 60 * 24 * 7; 
+const COOKIE_TTL = 60 * 60 * 24 * 31; 
 
 export async function onRequestGet(context) {
     const { env, request } = context;
