@@ -122,7 +122,7 @@ async function fetchResponse(context) {
             const lastMessage = [backupPrompt[backupPrompt.length - 1]].concat([{ role: "assistant", content: res_msg }]);
             const result = await db.prepare(`SELECT EXISTS(SELECT _id FROM chat_history WHERE _id='${chatId}' AND userId='${context.data.user}') AS result;`).first("result");
             if (result === 0) {
-                const title = outputPrompt[0].content[0].substring(0, 50);
+                const title = outputPrompt[0].content[0].text.substring(0, 50);
                 await db.prepare(`INSERT OR IGNORE INTO chat_history (_id, userId, title, messages, modified) VALUES ('${chatId}', '${context.data.user}', '${title}', '${JSON.stringify(outputPrompt)}', ${Date.now()});`).run();
             }
             else {
