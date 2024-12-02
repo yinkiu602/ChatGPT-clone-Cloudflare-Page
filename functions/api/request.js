@@ -5,6 +5,17 @@ import { Redis } from "@upstash/redis/cloudflare";
 export async function onRequestPost(context) {
     const { env, request } = context;
     try {
+        if (request.cf.colo === "HKG") {
+            return fetch(request.url, {
+                body: request.body,
+                headers: request.headers,
+                method: request.method,
+                redirect: "manual",
+                cf: {
+                    resolveOverride: env.SIN_CLOUDFLARE_IP,
+                }
+            })
+        }
         return fetchResponse(context);
     } catch (e) {
         return new Response(e.message, {
@@ -25,7 +36,7 @@ async function fetchResponse(context) {
     let openai;
 
     if (country === "HK" || country === "CN") {
-        openai = new OpenAI({apiKey: env.API_KEY, baseURL: env.BASE_URL});
+        openai = new OpenAI({apiKey: env.API_KEY});
     }
     else {
         openai = new OpenAI({apiKey: env.API_KEY});
