@@ -137,7 +137,7 @@ const LeftBar = ({setMessage, loginState, setLoginState, reloadHistory, setReloa
       <div>
         <a href={window.location.origin} onClick={handleNewChat} className={"new_chat"} style={{display:'flex', height:"2.5rem"}}>
           <div style={{paddingRight: "5px"}}>
-            <img className=" h2/3" src="chatgpt.svg" alt="logo"/>
+            {/* <img className=" h2/3" src="chatgpt.svg" alt="logo"/> */}
           </div>
           New Chat
         </a>
@@ -355,7 +355,7 @@ const BottomBar = ({message, setMessage, setThinking, setReloadHistory}) => {
       </div>
       <form onSubmit={submit} className="submit_form flex">
         <div className="cf-turnstile" data-sitekey="0x4AAAAAAAf448q1ewe2JJ_m"></div>
-        <textarea className="full_width chatbox" id="chatbox" name="chatbox" placeholder="Message ChatGPT" rows={1} onKeyDown={submit} onChange={(event => setQuestion(event.target.value))} onPaste={paste} value={question}/>
+        <textarea className="full_width chatbox" id="chatbox" name="chatbox" placeholder="Message GPT" rows={1} onKeyDown={submit} onChange={(event => setQuestion(event.target.value))} onPaste={paste} value={question}/>
         <button type="submit" id="submit_but"><Arrow/></button>
       </form>
     </div>
@@ -380,7 +380,7 @@ const MainContent = ({message, setMessage, setReloadHistory}) => {
   return (
     <div className="Main_Content flex flex_col full_height full_width">
       <div className="">
-        ChatGPT Clone
+        Chat with GPT
       </div>
       <div className="full_height full_width" id="main_content">
         <div style={{maxWidth: "48rem"}} className="margin_auto">
@@ -388,7 +388,7 @@ const MainContent = ({message, setMessage, setReloadHistory}) => {
             const key = `chat-${index}-div`;
             return (
               <div key={key}>
-                {item.role === "user" ? <div className="username">You</div> : <div className="bot">ChatGPT</div>}              
+                {item.role === "user" ? <div className="username">You</div> : <div className="bot">GPT</div>}              
                 <div key={`${key}-div`} className={"flex flex_col chat_content fit_content" + (item.role === "user" ? " user_chat": "") }>
                   {FormatResponse({input_text: item.content, role: item.role, index: index})}
                   {(thinking && item.role === "assistant" && index === (message.length - 1)) ? <span className="blinking">•</span>: ""}
